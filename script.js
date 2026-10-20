@@ -157,29 +157,38 @@ const SOUND_FILES = {
   hit:   'hit.wav'     // удар
 };
 
-// Для каждого звука заранее загружаем 4 копии («пул»).
-// Тогда звук играет сразу, без задержки, и одинаковые звуки
-// могут звучать одновременно (например, частые взмахи).
-const SOUND_COPIES = 4;
-const sounds = {};
+// С какой секунды начинать звук: в начале score.mp3 есть тишина,
+// без пропуска звук очка опаздывал бы
+const SOUND_START = {
+  score: 0.045
+};
 
+// Web Audio — «звуковой движок» браузера. Он играет звук мгновенно,
+// в отличие от тега <audio>, у которого есть заметная задержка.
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const sounds = {}; // сюда попадут загруженные звуки
+
+// Загружаем каждый файл и превращаем его в готовый к игре звук
 for (const name in SOUND_FILES) {
-  sounds[name] = { copies: [], next: 0 };
-  for (let i = 0; i < SOUND_COPIES; i++) {
-    const audio = new Audio(SOUND_PATH + SOUND_FILES[name]);
-    audio.preload = 'auto';
-    sounds[name].copies.push(audio);
-  }
+  fetch(SOUND_PATH + SOUND_FILES[name])
+    .then(response => response.arrayBuffer())
+    .then(data => audioContext.decodeAudioData(data))
+    .then(buffer => { sounds[name] = buffer; })
+    .catch(() => {}); // не загрузился — игра идёт без этого звука
 }
 
 function playSound(name) {
-  if (!settings.sound) return;
-  const sound = sounds[name];
-  const audio = sound.copies[sound.next];
-  sound.next = (sound.next + 1) % SOUND_COPIES; // следующая копия по кругу
-  audio.volume = settings.volume;
-  audio.currentTime = 0;
-  audio.play().catch(() => {}); // браузер может не дать играть звук до первого клика
+  if (!settings.sound || !sounds[name]) return;
+  // Браузер «будит» звук только после первого клика или нажатия
+  if (audioContext.state === 'suspended') audioContext.resume();
+
+  const source = audioContext.createBufferSource(); // проигрыватель
+  source.buffer = sounds[name];
+  const volume = audioContext.createGain();          // регулятор громкости
+  volume.gain.value = settings.volume;
+  source.connect(volume);
+  volume.connect(audioContext.destination);          // → колонки
+  source.start(0, SOUND_START[name] || 0);
 }
 
 
