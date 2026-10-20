@@ -1,3 +1,12 @@
+# Промт для Qwen (и других чатов с ограничением длины)
+
+Скопируйте **весь блок ниже** кнопкой копирования в его правом верхнем углу и вставьте в чат.
+Включите в чате поиск/доступ в интернет, чтобы нейросеть смогла открыть ссылки на исходники.
+После каждого файла пишите ей «дальше».
+
+<!-- Для ИИ-агентов: промт живёт ВНУТРИ блока ````text. Правьте его там; блок не убирать. -->
+
+````text
 ЭТАЛОННЫЕ ИСХОДНИКИ — СНАЧАЛА ОТКРОЙ И ПРОЧИТАЙ ИХ ПОЛНОСТЬЮ
 Игра уже написана и работает. Твоя задача — воспроизвести её ТОЧНО, один в один. Открой каждую ссылку и прочитай файл целиком (это обычный текст):
 - index.html — https://raw.githubusercontent.com/si0683/FlappyBird/main/index.html
@@ -5,7 +14,12 @@
 - script.js — https://raw.githubusercontent.com/si0683/FlappyBird/main/script.js (большой файл — прочитай до самого конца)
 - HTML для CodePen — https://raw.githubusercontent.com/si0683/FlappyBird/main/codepen/index.pen.html
 - Полное ТЗ с пояснениями — https://raw.githubusercontent.com/si0683/FlappyBird/main/PROMPT.md
-- Звуки (скачать в папку sounds/): https://si0683.github.io/FlappyBird/sounds/flap.wav, …/score.mp3, …/tick.wav, …/start.wav, …/hit.wav
+- Звуки (скачать в папку sounds/):
+  https://si0683.github.io/FlappyBird/sounds/flap.wav
+  https://si0683.github.io/FlappyBird/sounds/score.mp3
+  https://si0683.github.io/FlappyBird/sounds/tick.wav
+  https://si0683.github.io/FlappyBird/sounds/start.wav
+  https://si0683.github.io/FlappyBird/sounds/hit.wav
 - Репозиторий: https://github.com/si0683/FlappyBird · Работающая игра: https://si0683.github.io/FlappyBird/
 - Запасные ссылки, если raw.githubusercontent.com недоступен: https://si0683.github.io/FlappyBird/index.html, https://si0683.github.io/FlappyBird/style.css, https://si0683.github.io/FlappyBird/script.js
 
@@ -79,3 +93,4 @@
 
 ЧЕК-ЛИСТ
 Нет ошибок в консоли; одинаковая скорость на 60 и 144 Гц; птица не проходит сквозь препятствия; очко и звук — ровно на середине препятствия; пробел не прокручивает страницу; на телефоне 340 px нет горизонтальной прокрутки; настройки и рекорд сохраняются; работает в CodePen.
+````
