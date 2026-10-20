@@ -61,8 +61,10 @@ python -m http.server 8000
 
 ## Публикация на CodePen
 
-1. **HTML:** скопируйте из `index.html` часть между комментариями «Для CodePen копируйте…», то есть всё, что внутри `<body>`, кроме строки `<script src="script.js">`.
-2. **CSS:** скопируйте весь `style.css`. Шрифты подключаются в нём через `@import`.
-3. **JS:** скопируйте весь `script.js`.
+1. **HTML** (`index.pen.html` в CodePen 2.0 или окно HTML в классическом CodePen): скопируйте из `index.html` **только** часть между комментариями «Для CodePen копируйте…». Без `<!DOCTYPE>`, `<head>`, `<link>` и `<script src>`.
+2. **CSS** (`style.css`): скопируйте весь `style.css`. Шрифты подключаются в нём через `@import`.
+3. **JS** (`script.js`): скопируйте весь `script.js`.
+
+CodePen сам подключает `style.css` и `script.js` к странице. Если вставить `index.html` целиком, вместе со строкой `<script src="script.js?v=…">`, скрипт загрузится дважды. Тогда в консоли появится ошибка `Identifier 'CHARACTER_COLORS' has already been declared`. Чтобы её убрать, удалите из HTML в CodePen строки `<link …style.css…>` и `<script src="script.js…">`.
 
 Звуки в CodePen загружаются с GitHub Pages: игра сама определяет, что запущена в CodePen (константа `SOUND_PATH` в разделе 3). Поэтому сначала опубликуйте игру на GitHub Pages.

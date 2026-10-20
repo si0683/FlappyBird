@@ -33,6 +33,7 @@ sounds/      — flap.wav, score.mp3, tick.wav, start.wav, hit.wav
 - ⚠️ Подключай файлы с номером версии: `<link rel="stylesheet" href="style.css?v=1">` и `<script src="script.js?v=1"></script>`, рядом поясняющий комментарий. GitHub Pages разрешает браузеру кэшировать файлы на 10 минут, и без номера игроки после обновления продолжают видеть старую версию. При каждом изменении CSS или JS номер увеличивается на 1, одинаково у обоих файлов.
 - Код должен вставляться в три окна CodePen (HTML / CSS / JS) без правок:
   - в `index.html` пометь комментариями начало и конец части для CodePen (содержимое `<body>` без `<script src>`);
+  - ⚠️ CodePen (и классический, и 2.0 с `index.pen.html`) **сам подключает** `style.css` и `script.js`. Поэтому в комментариях-метках прямо напиши: «копировать только эту часть, строки `<link>` и `<script src>` не копировать». Иначе скрипт загрузится дважды и появится ошибка `Identifier ... has already been declared`;
   - шрифты подключи в `style.css` через `@import` Google Fonts: **Russo One** (заголовки, счёт) и **Rubik** (текст). Оба шрифта поддерживают кириллицу;
   - звуки в CodePen берутся с GitHub Pages: `SOUND_PATH = 'https://si0683.github.io/FlappyBird/sounds/'`, если `location.hostname` содержит `codepen` или `cdpn.io`, иначе `'sounds/'`.
 
@@ -245,7 +246,11 @@ sounds/      — flap.wav, score.mp3, tick.wav, start.wav, hit.wav
 </head>
 <body>
 
-<!-- ↓↓↓ Для CodePen копируйте в окно HTML всё, что ниже этой строки ↓↓↓ -->
+<!-- ↓↓↓ Для CodePen копируйте в окно HTML всё, что ниже этой строки ↓↓↓
+     Только эту часть! CodePen сам подключает style.css и script.js.
+     Если скопировать строки <link> или <script src>, игра загрузится дважды
+     и появится ошибка «Identifier ... has already been declared». -->
+
 
 <!-- «Сцена» — рамка игры. Внутри холст (canvas) и все экраны поверх него -->
 <div class="stage" id="stage">
@@ -385,7 +390,7 @@ sounds/      — flap.wav, score.mp3, tick.wav, start.wav, hit.wav
 
 </div>
 
-<!-- ↑↑↑ Для CodePen копируйте до этой строки ↑↑↑ -->
+<!-- ↑↑↑ Для CodePen копируйте до этой строки (строку <script> ниже — НЕ копировать) ↑↑↑ -->
 
 <!-- Подключаем файл с логикой игры (номер версии — как у style.css) -->
 <script src="script.js?v=3"></script>
