@@ -30,14 +30,15 @@ script.js    — логика: физика, препятствия, столк�
 sounds/      — звуки: flap, score, tick, start, hit
 PROMPT.md    — промт для нейросети: подробное ТЗ + полные исходники + ссылки на звуки
 AGENTS.md    — правила для ИИ-агентов (PROMPT.md обновляется вместе с игрой)
-tools/build_prompt.py — вставляет актуальные исходники в PROMPT.md
+codepen/index.pen.html — готовый HTML для CodePen (создаётся автоматически)
+tools/build.py — обновляет исходники в PROMPT.md и файл codepen/index.pen.html
 ```
 
 Чтобы другая нейросеть собрала эту игру, отдайте ей файл `PROMPT.md` целиком.
-После любого изменения кода обновите в нём исходники:
+После любого изменения кода обновите исходники в PROMPT.md и файл для CodePen:
 
 ```bash
-python tools/build_prompt.py
+python tools/build.py
 ```
 
 `script.js` разбит на 14 пронумерованных разделов, читать его удобно сверху вниз.
@@ -61,10 +62,12 @@ python -m http.server 8000
 
 ## Публикация на CodePen
 
-1. **HTML** (`index.pen.html` в CodePen 2.0 или окно HTML в классическом CodePen): скопируйте из `index.html` **только** часть между комментариями «Для CodePen копируйте…». Без `<!DOCTYPE>`, `<head>`, `<link>` и `<script src>`.
-2. **CSS** (`style.css`): скопируйте весь `style.css`. Шрифты подключаются в нём через `@import`.
-3. **JS** (`script.js`): скопируйте весь `script.js`.
+| Файл в CodePen | Что вставить |
+|---|---|
+| `index.pen.html` (в классическом CodePen — окно HTML) | весь файл **`codepen/index.pen.html`** (не `index.html`!) |
+| `style.css` | весь `style.css` |
+| `script.js` | весь `script.js` |
 
-CodePen сам подключает `style.css` и `script.js` к странице. Если вставить `index.html` целиком, вместе со строкой `<script src="script.js?v=…">`, скрипт загрузится дважды. Тогда в консоли появится ошибка `Identifier 'CHARACTER_COLORS' has already been declared`. Чтобы её убрать, удалите из HTML в CodePen строки `<link …style.css…>` и `<script src="script.js…">`.
+⚠️ Не вставляйте в CodePen `index.html`. CodePen сам подключает `style.css` и `script.js`, а в `index.html` они подключены ещё раз. Скрипт загрузится дважды, и появится ошибка `Identifier 'CHARACTER_COLORS' has already been declared`. В `codepen/index.pen.html` лишних строк нет, его можно вставлять целиком.
 
 Звуки в CodePen загружаются с GitHub Pages: игра сама определяет, что запущена в CodePen (константа `SOUND_PATH` в разделе 3). Поэтому сначала опубликуйте игру на GitHub Pages.
