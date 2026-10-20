@@ -149,20 +149,37 @@ function difficulty() {
 const isCodePen = location.hostname.includes('codepen') || location.hostname.includes('cdpn.io');
 const SOUND_PATH = isCodePen ? 'https://si0683.github.io/FlappyBird/sounds/' : 'sounds/';
 
-const sounds = {
-  flap:  new Audio(SOUND_PATH + 'flap.wav'),   // взмах крыльями
-  score: new Audio(SOUND_PATH + 'score.mp3'),  // пролетели препятствие
-  tick:  new Audio(SOUND_PATH + 'tick.wav'),   // обратный отсчёт
-  start: new Audio(SOUND_PATH + 'start.wav'),  // старт и ускорение
-  hit:   new Audio(SOUND_PATH + 'hit.wav')     // удар
+const SOUND_FILES = {
+  flap:  'flap.wav',   // взмах крыльями
+  score: 'score.mp3',  // пролетели препятствие
+  tick:  'tick.wav',   // обратный отсчёт
+  start: 'start.wav',  // старт и ускорение
+  hit:   'hit.wav'     // удар
 };
+
+// Для каждого звука заранее загружаем 4 копии («пул»).
+// Тогда звук играет сразу, без задержки, и одинаковые звуки
+// могут звучать одновременно (например, частые взмахи).
+const SOUND_COPIES = 4;
+const sounds = {};
+
+for (const name in SOUND_FILES) {
+  sounds[name] = { copies: [], next: 0 };
+  for (let i = 0; i < SOUND_COPIES; i++) {
+    const audio = new Audio(SOUND_PATH + SOUND_FILES[name]);
+    audio.preload = 'auto';
+    sounds[name].copies.push(audio);
+  }
+}
 
 function playSound(name) {
   if (!settings.sound) return;
-  // Копия звука нужна, чтобы одинаковые звуки могли играть одновременно
-  const sound = sounds[name].cloneNode();
-  sound.volume = settings.volume;
-  sound.play().catch(() => {}); // браузер может не дать играть звук до первого клика
+  const sound = sounds[name];
+  const audio = sound.copies[sound.next];
+  sound.next = (sound.next + 1) % SOUND_COPIES; // следующая копия по кругу
+  audio.volume = settings.volume;
+  audio.currentTime = 0;
+  audio.play().catch(() => {}); // браузер может не дать играть звук до первого клика
 }
 
 
@@ -252,7 +269,7 @@ const bird = {
 
 const OBSTACLE_WIDTH = 78;
 const OBSTACLE_SPACING = 270; // расстояние между препятствиями
-let obstacles = [];           // массив препятствий: { x, gapY, gap, passed }
+let obstacles = [];           // массив препятствий: { x, gapY, gap, passed, broken }
 
 function spawnObstacle() {
   const gap = difficulty().gap;
@@ -266,7 +283,7 @@ function spawnObstacle() {
     gapY = clamp(gapY, last.gapY - 170, last.gapY + 170);
   }
 
-  obstacles.push({ x: W + 40, gapY: gapY, gap: gap, passed: false });
+  obstacles.push({ x: W + 40, gapY: gapY, gap: gap, passed: false, broken: false });
 }
 
 
@@ -779,7 +796,7 @@ function spawnParticles(x, y, count, color, kind) {
       size: kind === 'puff' ? 4 + Math.random() * 4 : 3 + Math.random() * 4,
       spin: Math.random() * TAU,
       color: color,
-      kind: kind            // 'feather', 'spark' или 'puff'
+      kind: kind            // 'feather', 'spark', 'puff' или 'chunk'
     });
   }
 }
@@ -788,7 +805,10 @@ function updateParticles(k) {
   for (const p of particles) {
     p.x += p.vx * k;
     p.y += p.vy * k;
-    p.vy += (p.kind === 'feather' ? 0.08 : 0.02) * k;
+    // У каждого вида частиц своя «тяжесть»
+    if (p.kind === 'chunk') p.vy += 0.3 * k;
+    else if (p.kind === 'feather') p.vy += 0.08 * k;
+    else p.vy += 0.02 * k;
     p.vx *= 0.98;
     p.spin += 0.1 * k;
     p.life -= (p.kind === 'puff' ? 0.05 : 0.02) * k;
@@ -807,6 +827,13 @@ function drawParticles(c) {
       c.beginPath();
       c.ellipse(0, 0, p.size * 1.6, p.size * 0.6, 0, 0, TAU);
       c.fill();
+      c.restore();
+    } else if (p.kind === 'chunk') {
+      c.save();
+      c.translate(p.x, p.y);
+      c.rotate(p.spin);
+      c.fillStyle = p.color;
+      c.fillRect(-p.size, -p.size, p.size * 2, p.size * 2);
       c.restore();
     } else if (p.kind === 'spark') {
       drawStar(c, p.x, p.y, p.size * p.life + 1, p.color);
@@ -866,6 +893,7 @@ function addPoint() {
 
 // Столкновение с препятствием или землёй
 function hit(fromGround) {
+  if (game.state !== 'playing') return; // уже проиграли в этом кадре
   if (game.invulnerable > 0) return;
 
   const color = findById(CHARACTER_COLORS, settings.character).color;
@@ -883,9 +911,19 @@ function hit(fromGround) {
     return;
   }
 
-  // Ещё есть жизни: 1.5 секунды неуязвимости, чтобы пролететь сквозь препятствие
+  // Ещё есть жизни: 1.5 секунды неуязвимости, чтобы не потерять сразу все
   game.invulnerable = 1500;
   if (fromGround) bird.vy = difficulty().jump * 1.2; // отскок от земли
+}
+
+// Препятствие рассыпается на кусочки своего цвета
+function breakObstacle(o) {
+  o.broken = true;
+  const color = findById(OBSTACLE_COLORS, settings.obstacleColor).color;
+  for (let i = 0; i < 18; i++) {
+    const y = clamp(bird.y + (Math.random() - 0.5) * 220, 0, GROUND_Y);
+    spawnParticles(o.x + Math.random() * OBSTACLE_WIDTH, y, 1, color, 'chunk');
+  }
 }
 
 function gameOver() {
@@ -1062,13 +1100,19 @@ function updatePlaying(k, dt) {
   }
 
   for (const o of obstacles) {
-    // Очко — когда препятствие осталось позади птицы
-    if (!o.passed && o.x + OBSTACLE_WIDTH < bird.x) {
+    // Очко — как только центр птицы прошёл середину препятствия
+    if (!o.passed && o.x + OBSTACLE_WIDTH / 2 < bird.x) {
       o.passed = true;
       addPoint();
     }
-    if (birdHitsObstacle(o)) hit(false);
+    // Врезались — препятствие рассыпается, поэтому птица
+    // никогда не пролетает сквозь него
+    if (birdHitsObstacle(o)) {
+      breakObstacle(o);
+      hit(false);
+    }
   }
+  obstacles = obstacles.filter(o => !o.broken);
 }
 
 // После проигрыша птица падает на землю
