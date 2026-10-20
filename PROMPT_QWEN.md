@@ -16,6 +16,8 @@
 2) CSS — оформление (style.css / окно CSS);
 3) JS — логика игры (script.js / окно JS).
 Весь код только в этих трёх файлах, без других файлов и без сборки.
+Формат строго такой: обычный HTML, обычный CSS и ЧИСТЫЙ JavaScript (файл script.js).
+НЕ используй TypeScript, React, JSX, Vue, npm и модули — никаких .tsx, .ts, .jsx, import и export.
 
 Что должно быть в игре:
 - птичка взмахивает крыльями по пробелу, клику мышью или касанию экрана;
@@ -27,16 +29,16 @@
 - работает и на компьютере, и на телефоне.
 
 Собери проект на основе моего готового шаблона: в нём уже есть графика, звуки и настройки.
-HTML: https://raw.githubusercontent.com/si0683/FlappyBird/main/codepen/index.pen.html
-CSS: https://raw.githubusercontent.com/si0683/FlappyBird/main/style.css
-JS: https://raw.githubusercontent.com/si0683/FlappyBird/main/script.js
+HTML: https://si0683.github.io/FlappyBird/codepen/index.pen.html
+CSS: https://si0683.github.io/FlappyBird/style.css
+JS (чистый JavaScript): https://si0683.github.io/FlappyBird/script.js
 Запасные адреса шаблона:
-https://si0683.github.io/FlappyBird/codepen/index.pen.html
-https://si0683.github.io/FlappyBird/style.css
-https://si0683.github.io/FlappyBird/script.js
+https://raw.githubusercontent.com/si0683/FlappyBird/main/codepen/index.pen.html
+https://raw.githubusercontent.com/si0683/FlappyBird/main/style.css
+https://raw.githubusercontent.com/si0683/FlappyBird/main/script.js
 
 Как выдавать код:
-- Код каждого файла возьми из шаблона полностью, без изменений и сокращений: так игра точно заработает в CodePen вместе со звуками.
+- Код каждого файла возьми из шаблона полностью, без изменений и сокращений: так игра точно заработает в CodePen вместе со звуками. Шаблон уже на чистом JavaScript — не переводи его на TypeScript или React.
 - Отвечай сразу, без долгих рассуждений и без объяснений кода.
 - По одному файлу за ответ: сначала HTML, после моего «дальше» — CSS, после следующего «дальше» — JS.
 - Перед каждым блоком кода напиши одну строку:
@@ -77,6 +79,7 @@ https://si0683.github.io/FlappyBird/script.js
 **Шаг 1. Откройте Qwen.** Зайдите на [chat.qwen.ai](https://chat.qwen.ai) и создайте новый чат.
 
 **Шаг 2. Включите нужный режим.** Это самое важное для скорости:
+- ❌ **не включайте режим «Web Dev» / «Веб-разработка» / «Artifacts»**: в нём Qwen сам переписывает всё на React и выдаёт файлы `.tsx`;
 - ❌ **выключите «Мышление» (Thinking)**: иначе Qwen будет долго рассуждать перед ответом;
 - ✅ **включите «Поиск» (Search / веб-доступ)**: без него Qwen не сможет открыть ссылки на файлы.
 
@@ -133,6 +136,7 @@ https://si0683.github.io/FlappyBird/script.js
 | Qwen долго «думает» перед ответом | Проверьте, что «Мышление» выключено. Начните новый чат и отправьте промт заново. |
 | Qwen пишет «Не могу открыть шаблон» | Включите «Поиск» и отправьте промт заново. |
 | Qwen остановился посреди файла JS | Напишите `дальше`: он продолжит с того же места. Вставьте продолжение в конец окна JS. |
+| Qwen выдал файл `.tsx`, React или TypeScript | Выключите режим «Web Dev», начните новый чат и отправьте промт заново. Или напишите: `Нужен чистый JavaScript без React и TypeScript — возьми script.js из шаблона как есть.` |
 | Qwen начал писать свой код или что-то «улучшать» | Напишите: `Возьми код из шаблона без изменений.` |
 | В CodePen ошибка `has already been declared` | В окно HTML попал лишний `<script>`. Вставьте файл 1 заново, только его. |
 | Ничего не помогает | Покажите готовую игру: https://si0683.github.io/FlappyBird/ |
