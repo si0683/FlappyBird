@@ -74,6 +74,25 @@ codepen/index.pen.html — HTML для CodePen: часть index.html между
 - `k = dt / (1000/60)` — множитель кадра. **Вся** скорость и гравитация умножается на `k`, поэтому игра идёт одинаково при 60 и 144 Гц.
 - `update(k, dt)` → `draw()`.
 
+### Лаборатория (раздел 0 в начале `script.js`) — 10 настроек для экспериментов с детьми
+
+Объект `LAB`, каждая настройка на своей строке с комментарием-подсказкой. Значения по умолчанию дают обычную игру.
+
+| Поле | По умолчанию | Что делает |
+|---|---|---|
+| `titleTop`, `titleBottom` | `'Flappy'`, `'Bird'` | Название в меню. При запуске JS записывает их в `.title-top` и `.title-bottom` |
+| `myBirdColor` | `''` | Если не пусто, в конец `CHARACTER_COLORS` добавляется `{ id: 'my', label: 'Мой цвет', color }` |
+| `gravity` | `1` | Множитель гравитации; прыжок умножается на `√gravity`, поэтому высота взмаха не меняется |
+| `birdSize` | `20` | Радиус птицы `bird.r` |
+| `gameSpeed` | `1` | Множитель `speed` и `maxSpeed`, в том числе скорости в меню (2 × gameSpeed) |
+| `gapBonus` | `0` | Прибавка к `gap` |
+| `obstacleDistance` | `270` | `OBSTACLE_SPACING` |
+| `pointsPerObstacle` | `1` | Сколько очков даёт одно препятствие |
+| `fireworks` | `false` | `true`: вместо 10 жёлтых искр — по 8 искр пяти цветов |
+| `rainbowTrail` | `false` | `true`: в `playing` каждый кадр за птицей появляется частица `trail` (кружок радиусом `r*0.45`, `vx = -speed`, цвет `hsl(time*0.3 % 360, 90%, 60%)`, не падает, уменьшается) |
+
+`difficulty()` возвращает **не** объект из `DIFFICULTIES`, а новый объект с учётом `LAB`: `{ gravity: d.gravity*LAB.gravity, jump: d.jump*Math.sqrt(LAB.gravity), speed: d.speed*LAB.gameSpeed, maxSpeed: d.maxSpeed*LAB.gameSpeed, gap: d.gap + LAB.gapBonus }`.
+
 ### Физика и сложность (массив `DIFFICULTIES`, всё в одном месте)
 
 | id | Название | gravity | jump | speed | maxSpeed | gap |
@@ -85,18 +104,18 @@ codepen/index.pen.html — HTML для CodePen: часть index.html между
 - Гравитация: `vy += gravity*k`, `vy = min(vy, 9)`, `y += vy*k`.
 - Взмах: `vy = jump`, сброс фазы крыла, 3 частицы-облачка `puff`, звук `flap`.
 - Потолок: если `y < r`, то `y = r`, `vy = 0` (не смерть).
-- Ускорение: каждые 10 очков `targetSpeed = min(maxSpeed, targetSpeed + speed*0.12)`. Текущая скорость плавно догоняет её: `speed += (targetSpeed - speed) * 0.02 * k`. Показать тост «Быстрее! 🚀» и звук `start`.
+- Ускорение: каждые 10 пройденных препятствий (`game.passed`, а не очков: очков за препятствие может быть больше одного) `targetSpeed = min(maxSpeed, targetSpeed + speed*0.12)`. Текущая скорость плавно догоняет её: `speed += (targetSpeed - speed) * 0.02 * k`. Показать тост «Быстрее! 🚀» и звук `start`.
 - Старт всегда медленный и прощающий ошибки; лёгкая сложность по умолчанию.
 
 ### Препятствия
-- `OBSTACLE_WIDTH = 78`, `OBSTACLE_SPACING = 270`. Новое препятствие появляется в `x = W + 40`, когда последнее левее `W - 270` или препятствий нет.
+- `OBSTACLE_WIDTH = 78`, `OBSTACLE_SPACING = LAB.obstacleDistance` (270). Новое препятствие появляется в `x = W + 40`, когда последнее левее `W - OBSTACLE_SPACING` или препятствий нет.
 - Объект препятствия: `{ x, gapY, gap, passed, broken }`. `gap` запоминается при создании.
 - `gapY` (центр просвета) случайный в `[70 + gap/2, GROUND_Y - 50 - gap/2]` и не дальше ±170 от предыдущего.
 - Удалять, когда `x + 78 < -20`, а также если `broken`.
 
 ### Очки
 - ⚠️ Очко засчитывается **в момент, когда центр птицы прошёл середину препятствия**: `!o.passed && o.x + OBSTACLE_WIDTH/2 < bird.x`. Правый край препятствия не подходит: игрок видит, что уже пролетел, а очко появляется заметно позже.
-- За очко: `score++`, счёт с CSS-анимацией `pop`, звук `score`, 10 искр `spark`.
+- За препятствие: `score += LAB.pointsPerObstacle`, `passed++`, счёт с CSS-анимацией `pop`, звук `score`, 10 искр `spark` (или салют, если `LAB.fireworks`).
 - Если во время игры побит прошлый рекорд (`bestScore > 0`), один раз показать тост «Новый рекорд! 🏆».
 
 ### Столкновения, жизни, неуязвимость
@@ -133,12 +152,12 @@ codepen/index.pen.html — HTML для CodePen: часть index.html между
 - **Колонны:** каменный ствол с 3 желобками и швами блоков через 36 px, капитель у просвета из двух ступеней.
 - Цвета: зелёный `#4CAF6B / #2f7a47`, серый `#9099A6 / #5f6778`, коричневый `#9B6B43 / #6b4527`, чёрный `#4a505e / #22252c` (основной / тёмный).
 
-### Птица (`drawBird(c, bird, color)`, все размеры от радиуса `r = 20`)
+### Птица (`drawBird(c, bird, color)`, все размеры от радиуса `r = LAB.birdSize`, по умолчанию 20)
 Хвост, тело-эллипс с радиальным градиентом и обводкой, светлый животик, крыло (угол `sin(wing) * 0.6`; при подъёме машет быстрее), большой глаз с бликом, румянец, двухцветный клюв. Наклон плавно стремится к `clamp(vy * 0.07, -0.45, 1.3)`. Моргание: 130 мс каждые 3,2 с. После смерти глаз-крестик.
 Цвета: синий `#4A9DFF`, зелёный `#5BD97A`, красный `#FF5C5C`, жёлтый `#FFD84A`, фиолетовый `#B47AFF`.
 
 ### Частицы
-Массив `{x, y, vx, vy, life, size, spin, color, kind}`, где `kind` — `feather`, `spark`, `puff` или `chunk`. У каждого вида своя гравитация и скорость угасания.
+Массив `{x, y, vx, vy, life, size, spin, color, kind}`, где `kind` — `feather`, `spark`, `puff`, `chunk` или `trail` (радужный хвост из Лаборатории). У каждого вида своя гравитация и скорость угасания.
 
 ### Порядок рисования кадра
 Тряска → фон → препятствия → земля → частицы → птица (с миганием при неуязвимости).
@@ -185,6 +204,7 @@ codepen/index.pen.html — HTML для CodePen: часть index.html между
 - Поиск по id с запасным вариантом: `findById(list, id)` возвращает `list[0]`, если такого id нет.
 
 ## Структура `script.js` (разделы с нумерованными заголовками-комментариями)
+0. Лаборатория игры 🧪 (объект `LAB`)
 1. Данные для настроек
 2. Настройки игрока и рекорд
 3. Звуки
@@ -241,9 +261,9 @@ codepen/index.pen.html — HTML для CodePen: часть index.html между
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Flappy Bird</title>
   <!-- Подключаем файл с оформлением.
-       ?v=3 — номер версии: меняем его при каждом обновлении игры,
+       ?v=4 — номер версии: меняем его при каждом обновлении игры,
        чтобы браузер не брал старый файл из кэша -->
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -394,7 +414,7 @@ codepen/index.pen.html — HTML для CodePen: часть index.html между
 <!-- ↑↑↑ Для CodePen копируйте до этой строки (строку <script> ниже — НЕ копировать) ↑↑↑ -->
 
 <!-- Подключаем файл с логикой игры (номер версии — как у style.css) -->
-<script src="script.js?v=3"></script>
+<script src="script.js?v=4"></script>
 </body>
 </html>
 ````
@@ -1052,6 +1072,7 @@ kbd {
    FLAPPY BIRD — логика игры на чистом JavaScript
    ---------------------------------------------------------
    Как устроен файл (читайте сверху вниз):
+     0. Лаборатория: 10 настроек для экспериментов
      1. Данные для настроек (цвета, фоны, сложность)
      2. Настройки игрока и рекорд (сохраняются в браузере)
      3. Звуки
@@ -1067,6 +1088,47 @@ kbd {
     13. Управление (клавиатура, мышь, касание)
     14. Игровой цикл и запуск
    ========================================================= */
+
+
+/* ---------------------------------------------------------
+   0. ЛАБОРАТОРИЯ ИГРЫ 🧪
+   Поменяй одно значение, и игра изменится!
+   Сейчас здесь обычные значения: игра такая, как задумано.
+   --------------------------------------------------------- */
+
+const LAB = {
+  // 1. Название игры в меню: верхнее и нижнее слово (до 8 букв)
+  titleTop: 'Flappy',
+  titleBottom: 'Bird',
+
+  // 2. Свой цвет птички, например '#FF7EB6' (розовый).
+  //    Пусто '' — своего цвета нет. Цвет появится в «Настройках»
+  myBirdColor: '',
+
+  // 3. Гравитация: 1 — обычная, 0.5 — Луна, 2 — Юпитер
+  gravity: 1,
+
+  // 4. Размер птички (радиус): 20 — обычная, 30 — большая, 14 — маленькая
+  birdSize: 20,
+
+  // 5. Скорость игры: 1 — обычная, 0.5 — замедление, 1.5 — турбо
+  gameSpeed: 1,
+
+  // 6. Добавка к просвету между трубами: 0 — как есть, 60 — легче, -30 — труднее
+  gapBonus: 0,
+
+  // 7. Расстояние между препятствиями: 270 — обычное, 200 — чаще, 400 — реже
+  obstacleDistance: 270,
+
+  // 8. Сколько очков за одно препятствие: 1 — обычно, 100 — огромные числа
+  pointsPerObstacle: 1,
+
+  // 9. Салют за очко: false — жёлтые искры, true — разноцветный салют
+  fireworks: false,
+
+  // 10. Радужный хвост за птичкой: false — нет, true — есть
+  rainbowTrail: false
+};
 
 
 /* ---------------------------------------------------------
@@ -1124,6 +1186,11 @@ const LIVES_CHOICES = [
   { id: 4, label: '4' },
   { id: 5, label: '5' }
 ];
+
+// Свой цвет из Лаборатории — добавляем в конец списка цветов
+if (LAB.myBirdColor) {
+  CHARACTER_COLORS.push({ id: 'my', label: 'Мой цвет', color: LAB.myBirdColor });
+}
 
 // Найти элемент списка по id (если не нашли — берём первый)
 function findById(list, id) {
@@ -1184,9 +1251,17 @@ function saveBestScore() {
   }
 }
 
-// Текущая сложность (объект из списка DIFFICULTIES)
+// Текущая сложность (из списка DIFFICULTIES) с учётом Лаборатории
 function difficulty() {
-  return findById(DIFFICULTIES, settings.difficulty);
+  const d = findById(DIFFICULTIES, settings.difficulty);
+  return {
+    gravity: d.gravity * LAB.gravity,
+    // Прыжок меняем вместе с гравитацией, чтобы высота взмаха осталась прежней
+    jump: d.jump * Math.sqrt(LAB.gravity),
+    speed: d.speed * LAB.gameSpeed,
+    maxSpeed: d.maxSpeed * LAB.gameSpeed,
+    gap: d.gap + LAB.gapBonus
+  };
 }
 
 
@@ -1305,6 +1380,7 @@ function resizeGame() {
 const game = {
   state: 'menu',
   score: 0,
+  passed: 0,         // сколько препятствий пролетели (для ускорения)
   lives: 3,
   speed: 2,          // текущая скорость препятствий
   targetSpeed: 2,    // к этой скорости игра плавно разгоняется
@@ -1319,7 +1395,7 @@ const bird = {
   x: 200,
   y: H / 2,
   vy: 0,        // скорость по вертикали (velocity y)
-  r: 20,        // радиус птицы
+  r: LAB.birdSize, // радиус птицы (меняется в Лаборатории)
   angle: 0,     // наклон
   wing: 0,      // фаза взмаха крыльев
   blink: false, // моргает ли сейчас
@@ -1327,7 +1403,7 @@ const bird = {
 };
 
 const OBSTACLE_WIDTH = 78;
-const OBSTACLE_SPACING = 270; // расстояние между препятствиями
+const OBSTACLE_SPACING = LAB.obstacleDistance; // расстояние между препятствиями
 let obstacles = [];           // массив препятствий: { x, gapY, gap, passed, broken }
 
 function spawnObstacle() {
@@ -1855,7 +1931,7 @@ function spawnParticles(x, y, count, color, kind) {
       size: kind === 'puff' ? 4 + Math.random() * 4 : 3 + Math.random() * 4,
       spin: Math.random() * TAU,
       color: color,
-      kind: kind            // 'feather', 'spark', 'puff' или 'chunk'
+      kind: kind            // 'feather', 'spark', 'puff', 'chunk' или 'trail'
     });
   }
 }
@@ -1867,7 +1943,7 @@ function updateParticles(k) {
     // У каждого вида частиц своя «тяжесть»
     if (p.kind === 'chunk') p.vy += 0.3 * k;
     else if (p.kind === 'feather') p.vy += 0.08 * k;
-    else p.vy += 0.02 * k;
+    else if (p.kind !== 'trail') p.vy += 0.02 * k; // хвост не падает
     p.vx *= 0.98;
     p.spin += 0.1 * k;
     p.life -= (p.kind === 'puff' ? 0.05 : 0.02) * k;
@@ -1896,6 +1972,8 @@ function drawParticles(c) {
       c.restore();
     } else if (p.kind === 'spark') {
       drawStar(c, p.x, p.y, p.size * p.life + 1, p.color);
+    } else if (p.kind === 'trail') {
+      drawCircle(c, p.x, p.y, p.size * p.life, p.color); // хвост уменьшается
     } else {
       drawCircle(c, p.x, p.y, p.size * (1.5 - p.life), p.color);
     }
@@ -1930,13 +2008,22 @@ function flap(withSound) {
 }
 
 function addPoint() {
-  game.score++;
+  game.score += LAB.pointsPerObstacle;
+  game.passed++;
   showScore();
   playSound('score');
-  spawnParticles(bird.x, bird.y, 10, '#ffd84a', 'spark');
 
-  // Каждые 10 очков игра становится чуть быстрее
-  if (game.score % 10 === 0) {
+  if (LAB.fireworks) {
+    // Разноцветный салют: по 8 искр каждого цвета
+    for (const color of ['#ff5c5c', '#ffd84a', '#5bd97a', '#4a9dff', '#b47aff']) {
+      spawnParticles(bird.x, bird.y, 8, color, 'spark');
+    }
+  } else {
+    spawnParticles(bird.x, bird.y, 10, '#ffd84a', 'spark');
+  }
+
+  // Каждые 10 препятствий игра становится чуть быстрее
+  if (game.passed % 10 === 0) {
     const d = difficulty();
     game.targetSpeed = Math.min(d.maxSpeed, game.targetSpeed + d.speed * 0.12);
     showToast('Быстрее! 🚀');
@@ -2009,6 +2096,7 @@ function showResults() {
 function resetGame() {
   const d = difficulty();
   game.score = 0;
+  game.passed = 0;
   game.lives = settings.lives;
   game.speed = d.speed;
   game.targetSpeed = d.speed;
@@ -2119,7 +2207,7 @@ function moveObstacles(speed, k) {
 
 // В меню птица летит сама (автопилот) — так видно настройки «вживую»
 function updateMenu(k) {
-  const speed = 2;
+  const speed = 2 * LAB.gameSpeed;
   game.distance += speed * k;
   moveObstacles(speed, k);
 
@@ -2141,6 +2229,16 @@ function updatePlaying(k, dt) {
   game.speed += (game.targetSpeed - game.speed) * 0.02 * k;
   game.distance += game.speed * k;
   if (game.invulnerable > 0) game.invulnerable -= dt;
+
+  // Радужный хвост: каждый кадр новый кружок, цвет плавно меняется по радуге
+  if (LAB.rainbowTrail) {
+    particles.push({
+      x: bird.x - bird.r * 0.8, y: bird.y, vx: -game.speed, vy: 0,
+      life: 1, size: bird.r * 0.45, spin: 0,
+      color: 'hsl(' + Math.round(game.time * 0.3) % 360 + ', 90%, 60%)',
+      kind: 'trail'
+    });
+  }
 
   applyGravity(k);
   moveObstacles(game.speed, k);
@@ -2503,6 +2601,10 @@ function loop(now) {
 
   requestAnimationFrame(loop);
 }
+
+// Название игры из Лаборатории
+document.querySelector('.title-top').textContent = LAB.titleTop;
+document.querySelector('.title-bottom').textContent = LAB.titleBottom;
 
 resizeGame();
 resetGame();
